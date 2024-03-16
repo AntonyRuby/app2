@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uni_links/uni_links.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const MyApp());
@@ -26,25 +25,18 @@ class _MyAppState extends State<MyApp> {
 
   void _initDeepLinkListener() async {
     try {
-      // Attach a listener to the deep link stream
-      // This will listen for any incoming deep links
-      // and handle them accordingly
       final initialLink = await getInitialLink();
-      _handleDeepLink(initialLink); // Pass null safely, if needed
+      _handleDeepLink(initialLink);
       linkStream.listen((String? link) {
-        // Note the nullable type String?
         if (link != null && link.isNotEmpty) {
           _handleDeepLink(link);
         }
-      }, onError: (err) {
-        print('Error: $err');
-      });
+      }, onError: (err) {});
     } on PlatformException {
       print('Error initializing deep link listener.');
     }
   }
 
-  // Modify the _handleDeepLink method in the ChildApp to include Dubai in the cities list
   void _handleDeepLink(String? link) {
     if (link != null) {
       Uri uri = Uri.parse(link);
