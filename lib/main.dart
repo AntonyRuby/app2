@@ -40,26 +40,41 @@ class _MyAppState extends State<MyApp> {
   void _handleDeepLink(String? link) {
     if (link != null) {
       Uri uri = Uri.parse(link);
-      setState(() {
-        selectedCountry = uri.queryParameters['country'] ?? '';
-        if (selectedCountry == 'USA') {
-          cities = ['New York', 'Los Angeles', 'Chicago'];
-        } else if (selectedCountry == 'Canada') {
-          cities = ['Toronto', 'Vancouver', 'Montreal'];
-        } else if (selectedCountry == 'UK') {
-          cities = ['London', 'Manchester', 'Birmingham'];
-        } else if (selectedCountry == 'UAE') {
-          cities = ['Abu Dhabi', 'Dubai', 'Sharjah'];
-        } else {
-          cities = [];
-        }
-      });
+      String? authToken = uri.queryParameters['token'];
+      if (_isValidAuthToken(authToken)) {
+        setState(() {
+          selectedCountry = uri.queryParameters['country'] ?? '';
+          _loadCities(selectedCountry);
+        });
+      } else {
+        print('Invalid or missing authentication token. Access denied.');
+      }
+    }
+  }
+
+  bool _isValidAuthToken(String? authToken) {
+    // Simulated token validation
+    return authToken == 'sample_auth_token';
+  }
+
+  void _loadCities(String country) {
+    if (country == 'USA') {
+      cities = ['New York', 'Los Angeles', 'Chicago'];
+    } else if (country == 'Canada') {
+      cities = ['Toronto', 'Vancouver', 'Montreal'];
+    } else if (country == 'UK') {
+      cities = ['London', 'Manchester', 'Birmingham'];
+    } else if (country == 'UAE') {
+      cities = ['Abu Dhabi', 'Dubai', 'Sharjah'];
+    } else {
+      cities = [];
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
           title: Text('Cities in $selectedCountry'),
