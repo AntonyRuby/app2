@@ -16,6 +16,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String selectedCountry = '';
   List<String> cities = [];
+  String? authToken;
+  String? userEmail;
 
   @override
   void initState() {
@@ -31,25 +33,58 @@ class _MyAppState extends State<MyApp> {
         if (link != null && link.isNotEmpty) {
           _handleDeepLink(link);
         }
-      }, onError: (err) {});
-    } on PlatformException {
-      print('Error initializing deep link listener.');
+      }, onError: (err) {
+        // Show Snackbar with error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error initializing deep link listener: $err'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      });
+    } on PlatformException catch (e) {
+      // Show Snackbar with platform exception message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error initializing deep link listener: ${e.message}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      // Show Snackbar with generic exception message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error initializing deep link listener: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   void _handleDeepLink(String? link) {
     if (link != null) {
       Uri uri = Uri.parse(link);
-      String? authToken = uri.queryParameters['token'];
+      authToken = uri.queryParameters['token'];
+      userEmail = uri.queryParameters['email'];
       if (_isValidAuthToken(authToken)) {
         setState(() {
           selectedCountry = uri.queryParameters['country'] ?? '';
           _loadCities(selectedCountry);
         });
       } else {
-        print('Invalid or missing authentication token. Access denied.');
+        _showErrorSnackBar(
+            'Invalid or missing authentication token. Access denied.');
       }
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   bool _isValidAuthToken(String? authToken) {
@@ -71,25 +106,55 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  void _logOut() {
+    setState(() {
+      authToken = null;
+      userEmail = null;
+      selectedCountry = '';
+      cities = [];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primaryColor: Colors.indigo,
+        hintColor: Colors.amber,
+        fontFamily: 'Roboto',
+      ),
       home: Scaffold(
         appBar: AppBar(
-          title: Text('Cities in $selectedCountry'),
+          title: Center(child: Text('Cities in $selectedCountry')),
+          actions: [
+            if (authToken != null)
+              IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: _logOut,
+              ),
+          ],
         ),
         body: Center(
           child: selectedCountry.isEmpty
-              ? const Text('Waiting for country selection...')
-              : ListView.builder(
-                  itemCount: cities.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text(cities[index]),
-                    );
-                  },
-                ),
+              ? const CircularProgressIndicator()
+              : cities.isEmpty
+                  ? const Text('No cities available')
+                  : ListView.builder(
+                      itemCount: cities.length,
+                      itemBuilder: (context, index) {
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 8.0, horizontal: 16.0),
+                          child: ListTile(
+                            title: Text(
+                              cities[index],
+                              style: const TextStyle(fontSize: 18.0),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
         ),
       ),
     );
